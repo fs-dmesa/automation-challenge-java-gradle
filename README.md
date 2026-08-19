@@ -27,6 +27,14 @@ Gradle writes an HTML report automatically, no extra command needed:
 open build/reports/tests/test/index.html
 ```
 
+## Traces
+
+Every test records a Playwright trace, but it's only written to disk when the
+test doesn't pass — passing traces are discarded automatically. A failing
+test writes `traces/<testName>.zip`. View one by dragging it into
+[trace.playwright.dev](https://trace.playwright.dev) (no install needed), or
+with `npx playwright show-trace traces/<name>.zip` if you have Node.
+
 ## Layout
 
 - `src/main/java/challenge/pages` — page objects
