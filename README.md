@@ -19,6 +19,14 @@ required) and checks that a product title renders. It should pass before your
 interview starts; if it doesn't, that's an environment problem worth chasing
 down ahead of time rather than during the session.
 
+## Test report
+
+Gradle writes an HTML report automatically, no extra command needed:
+
+```
+open build/reports/tests/test/index.html
+```
+
 ## Layout
 
 - `src/main/java/challenge/pages` — page objects
