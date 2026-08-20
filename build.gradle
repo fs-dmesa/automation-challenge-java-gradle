@@ -18,8 +18,10 @@ repositories {
 
 dependencies {
     implementation 'com.microsoft.playwright:playwright:1.49.0'
+    // implementation, not testImplementation: page objects in src/main use @Step,
+    // which needs Allure on the main compile classpath too.
+    implementation 'io.qameta.allure:allure-junit5:2.25.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    testImplementation 'io.qameta.allure:allure-junit5:2.25.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
