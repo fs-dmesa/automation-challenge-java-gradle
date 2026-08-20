@@ -10,45 +10,30 @@ environment only — the actual challenge is given during your interview session
 ## Setup
 
 ```
-./gradlew playwrightCli   # installs Chromium, once per machine
-./gradlew test            # runs the smoke test
+./gradlew test
 ```
 
-The smoke test opens the target storefront (Test Mode — no login or account
-required) and checks that a product title renders. It should pass before your
-interview starts; if it doesn't, that's an environment problem worth chasing
-down ahead of time rather than during the session.
+This installs Chromium the first time, then runs the smoke test. It should
+pass before your interview starts — if it doesn't, let us know ahead of time
+rather than during the session.
 
-## Test report
+## Headed vs headless
 
-Gradle writes an HTML report automatically, no extra command needed:
-
-```
-open build/reports/tests/test/index.html
-```
-
-## Traces
-
-Every test writes a Playwright trace to `traces/<testName>.zip`, pass or
-fail. View one by uploading the file at
-[https://trace.playwright.dev/](https://trace.playwright.dev/) — no install
-needed. If you have Node, `npx playwright show-trace traces/<name>.zip`
-works too. Every trace is also attached to the Allure report below, so you
-usually don't need this file directly.
-
-## Allure report
+Tests run headless by default. To watch the browser instead:
 
 ```
-./gradlew test allureView
+./gradlew test -Dheadless=false
 ```
 
-This runs the tests, generates an Allure report, and serves it at the URL it
-prints (`http://localhost:<port>/`). Allure's report loads its data via XHR,
-which browsers block outright under `file://` — opening `index.html`
-directly just shows a blank page — so `allureView` runs a small embedded
-HTTP server instead of requiring `allure serve` or a separate Allure install.
-Each test's Playwright trace appears inline as an attachment. Stop the
-server with Ctrl+C.
+## Report
+
+```
+./gradlew allureView
+```
+
+Opens at the `http://localhost:<port>/` URL it prints. Shows the full test
+result, with each test's Playwright trace attached inline — pass or fail.
+Stop it with Ctrl+C.
 
 ## Layout
 

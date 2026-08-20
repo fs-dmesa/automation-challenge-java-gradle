@@ -25,9 +25,12 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    dependsOn 'playwrightCli'
 }
 
-// Run once per machine: ./gradlew playwrightCli --args "install chromium"
+// Runs automatically before `test` (JavaExec forks its own JVM, so it can't
+// take Gradle down with it the way an in-process exec would). Playwright's
+// installer is a no-op once the browser is already present.
 task playwrightCli(type: JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'com.microsoft.playwright.CLI'
