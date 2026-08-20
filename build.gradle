@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'io.qameta.allure' version '2.11.2'
+}
+
+group = 'com.fastspring.interview'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.microsoft.playwright:playwright:1.49.0'
+    // implementation, not testImplementation: page objects in src/main use @Step,
+    // which needs Allure on the main compile classpath too.
+    implementation 'io.qameta.allure:allure-junit5:2.25.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    dependsOn 'playwrightCli'
+}
+
+// Runs automatically before `test` (JavaExec forks its own JVM, so it can't
+// take Gradle down with it the way an in-process exec would). Playwright's
+// installer is a no-op once the browser is already present.
+task playwrightCli(type: JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.microsoft.playwright.CLI'
+    args 'install', 'chromium'
+}
+
+// Allure's report loads its data via XHR, which browsers block under file://
+// (verified: opening allureReport/index.html directly shows a blank page and
+// CORS errors in the console). This serves it locally with a plain embedded
+// HTTP server - no `allure serve`, no CLI regeneration, nothing to install.
+task allureView(dependsOn: 'allureReport') {
+    group = 'verification'
+    description = 'Serves the generated Allure report at http://localhost:<port>/'
+
+    doLast {
+        def reportDir = file("$buildDir/reports/allure-report/allureReport")
+        def mimeTypes = [
+                html: 'text/html', js: 'application/javascript', css: 'text/css',
+                json: 'application/json', ico: 'image/x-icon', png: 'image/png',
+                svg: 'image/svg+xml', woff: 'font/woff', woff2: 'font/woff2',
+                ttf: 'font/ttf', txt: 'text/plain', csv: 'text/csv', xml: 'application/xml'
+        ]
+        def server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress(0), 0)
+        server.createContext('/', { exchange ->
+            def requestPath = exchange.requestURI.path == '/' ? '/index.html' : exchange.requestURI.path
+            def target = new File(reportDir, requestPath)
+            if (!target.exists() || !target.canonicalPath.startsWith(reportDir.canonicalPath)) {
+                exchange.sendResponseHeaders(404, -1)
+                return
+            }
+            def ext = target.name.contains('.') ? target.name.substring(target.name.lastIndexOf('.') + 1) : ''
+            exchange.responseHeaders.add('Content-Type', mimeTypes.get(ext, 'application/octet-stream'))
+            def bytes = target.bytes
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withStream { it.write(bytes) }
+        } as com.sun.net.httpserver.HttpHandler)
+        server.start()
+        def port = server.address.port
+        println ""
+        println "Allure report: http://localhost:${port}/"
+        println "Press Ctrl+C to stop."
+        Runtime.runtime.addShutdownHook(new Thread({ server.stop(0) }))
+        Thread.currentThread().join()
+    }
+}
